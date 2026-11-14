@@ -8,7 +8,7 @@ API REST para la gestión de productos florales, clientes, pedidos y entregas, d
 
 Este proyecto consiste en el desarrollo de una API REST para administrar los procesos principales de una floristería. Permite gestionar productos, registrar clientes, crear pedidos con sus respectivos detalles y administrar las entregas asociadas.
 
-El proyecto se desarrolla como parte de la asignatura **Programación II**, aplicando conceptos de desarrollo de APIs, arquitectura por capas, Entity Framework Core, SQL Server y control de versiones con Git y GitHub.
+Se desarrolla como parte de la asignatura **Programación II**, aplicando arquitectura por capas, Entity Framework Core, SQL Server, inyección de dependencias y control de versiones con Git y GitHub.
 
 ## Tecnologías utilizadas
 
@@ -22,32 +22,42 @@ El proyecto se desarrolla como parte de la asignatura **Programación II**, apli
 
 ## Arquitectura del proyecto
 
-La solución está organizada en tres proyectos independientes:
+La solución está organizada en cuatro proyectos independientes:
 
 ### Floristeria.API
 
 Capa de presentación y exposición de los endpoints HTTP.
 
-- Controllers: productos, clientes, pedidos y entregas.
-- DTOs: modelos para recibir y validar solicitudes.
-- Migrations: migraciones de Entity Framework Core.
-- Program.cs: configuración de servicios e inyección de dependencias.
+- **Controllers:** productos, clientes, pedidos y entregas.
+- **Migrations:** migraciones de Entity Framework Core.
+- **Program.cs:** configuración de servicios e inyección de dependencias.
+
+### Floristeria.Application
+
+Capa encargada de implementar los servicios y la lógica de negocio del sistema.
+
+- **Contract:** interfaces de los servicios.
+- **Core:** BaseService, IBaseService y ServiceResult.
+- **Dtos:** modelos de transferencia de datos organizados por módulo.
+- **Service:** implementación de ProductService, CustomerService, OrderService y DeliveryService.
+
+Los servicios gestionan las operaciones y validaciones del negocio, evitando que estas responsabilidades permanezcan directamente en los controladores.
 
 ### Floristeria.Domain
 
 Capa que define las entidades del negocio y los contratos de los repositorios.
 
-- Entities: Product, Customer, Order, OrderDetail y Delivery.
-- Interfaces: IProductRepository, ICustomerRepository, IOrderRepository e IDeliveryRepository.
+- **Entities:** Product, Customer, Order, OrderDetail y Delivery.
+- **Interfaces:** IProductRepository, ICustomerRepository, IOrderRepository e IDeliveryRepository.
 
 ### Floristeria.Infrastructure
 
 Capa responsable del acceso a datos y la persistencia.
 
-- Context: ApplicationDbContext.
-- Repositories: implementación de los repositorios de productos, clientes, pedidos y entregas.
-- Interfaces: contratos específicos para consultas de infraestructura.
-- Models: modelos de consulta, incluyendo OrderSummaryModel.
+- **Context:** ApplicationDbContext.
+- **Repositories:** implementación de los repositorios.
+- **Interfaces:** contratos específicos para consultas de infraestructura.
+- **Models:** modelos de consulta, incluyendo OrderSummaryModel.
 
 Esta separación permite organizar las responsabilidades del sistema y facilitar su mantenimiento.
 
@@ -55,11 +65,12 @@ Esta separación permite organizar las responsabilidades del sistema y facilitar
 
 - **Productos:** operaciones CRUD para administrar productos florales, precios, existencias y disponibilidad.
 - **Clientes:** registro, consulta, actualización y eliminación de clientes.
-- **Pedidos:** creación de pedidos con productos, cantidades, validación de existencias y cálculo del total.
-- **Entregas:** registro y administración de entregas asociadas a pedidos.
-- **Resúmenes de pedidos:** consulta de información resumida mediante el endpoint `GET /api/Orders/summaries`.
+- **Pedidos:** creación de pedidos, validación de productos y existencias, cálculo de totales y actualización de estados.
+- **Entregas:** registro y administración de entregas, validación de fechas y actualización de estados.
+- **Resúmenes de pedidos:** consulta mediante `GET /api/Orders/summaries`.
+- **Capa de servicios:** implementación de contratos y servicios para los cuatro módulos.
 - **Persistencia:** acceso a SQL Server mediante Entity Framework Core y repositorios.
-- **Validaciones:** comprobación de datos recibidos y reglas básicas del sistema.
+- **Validaciones:** comprobación de datos recibidos y aplicación de reglas de negocio.
 
 ## Endpoints principales
 
@@ -77,13 +88,7 @@ Los endpoints pueden consultarse y probarse mediante Swagger.
 
 El proyecto utiliza **SQL Server** con Entity Framework Core y migraciones Code First.
 
-Las entidades principales son:
-
-- Product
-- Customer
-- Order
-- OrderDetail
-- Delivery
+Las entidades principales son Product, Customer, Order, OrderDetail y Delivery.
 
 El contexto `ApplicationDbContext` se encuentra en `Floristeria.Infrastructure`, mientras que las migraciones se mantienen en `Floristeria.API`.
 
@@ -94,10 +99,11 @@ La cadena de conexión se configura mediante `appsettings.json`, utilizando la c
 El proyecto utiliza una metodología de trabajo basada en Git Flow:
 
 - **main:** rama reservada para la versión estable del producto.
-- **develop:** rama principal de integración y desarrollo.
-- **feature/**: ramas utilizadas para implementar funcionalidades y asignaciones específicas.
+- **develop:** rama que contiene la entrega de la Tarea 3.
+- **application:** rama que incorpora la capa de servicios correspondiente a la Tarea 4.
+- **feature/***: ramas utilizadas para implementar funcionalidades específicas.
 
-Cada funcionalidad se desarrolla en su propia rama y posteriormente se integra en `develop` mediante Pull Requests.
+Las ramas `develop` y `application` se mantienen independientes para facilitar la revisión de ambas asignaciones.
 
 ### Pull Requests de funcionalidades
 
@@ -109,15 +115,26 @@ Cada funcionalidad se desarrolla en su propia rama y posteriormente se integra e
 
 ## Verificaciones
 
-- Compilación exitosa de la solución.
-- Pruebas funcionales de la API mediante Swagger.
-- Validación de operaciones CRUD y respuestas HTTP.
-- Verificación de la conexión con SQL Server y la integración de Domain e Infrastructure.
+- Recompilación exitosa de los cuatro proyectos, sin errores.
+- Pruebas de consultas mediante Swagger.
+- Validación de creación de pedidos con cliente inexistente.
+- Registro y actualización de una entrega.
+- Verificación de la integración entre API, Application, Domain e Infrastructure.
 
 ## Datos de revisión
 
-**La rama `develop` contiene el código integrado del proyecto.**
+### Tarea 3 — Domain e Infrastructure
 
-Las ramas `feature/` se conservan como evidencia del proceso de desarrollo y de la implementación progresiva de las funcionalidades.
+**Rama:** `develop`
 
-La **Tarea 3** incorpora las capas Domain e Infrastructure, con sus entidades, interfaces, repositorios, modelos y contexto de base de datos, integradas con una API REST funcional.
+Implementación de las capas Domain e Infrastructure, incluyendo entidades, interfaces, repositorios, modelos y contexto de base de datos, integradas con una API REST funcional.
+
+### Tarea 4 — Capa de servicios
+
+**Rama:** `application`
+
+Implementación de la capa Application con las carpetas Contract, Core, Dtos y Service.
+
+Se desarrollaron los servicios de productos, clientes, pedidos y entregas, integrándolos con los controladores mediante inyección de dependencias.
+
+La solución fue compilada correctamente y se realizaron pruebas funcionales mediante Swagger.

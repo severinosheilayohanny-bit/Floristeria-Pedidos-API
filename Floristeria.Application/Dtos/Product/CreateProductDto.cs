@@ -1,7 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Floristeria.API.DTOs
+namespace Floristeria.Application.Dtos.Product
 {
     public class CreateProductDto
     {

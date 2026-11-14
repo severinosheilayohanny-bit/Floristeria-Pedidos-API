@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Floristeria.API/Floristeria.API.csproj" />
+  <Project Path="Floristeria.Application/Floristeria.Application.csproj" Id="781fb42f-bd18-4a80-abf9-bc0ed4b3befb" />
   <Project Path="Floristeria.Domain/Floristeria.Domain.csproj" Id="f85fb62b-ccd0-4197-b7f2-a749f748d184" />
   <Project Path="Floristeria.Infrastructure/Floristeria.Infrastructure.csproj" Id="eeb3487a-4277-4dc2-b46b-c96c78ee7476" />
 </Solution>

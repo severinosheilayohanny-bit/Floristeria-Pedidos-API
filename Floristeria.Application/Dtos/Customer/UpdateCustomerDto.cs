@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Floristeria.API.DTOs
+namespace Floristeria.Application.Dtos.Customer
 {
-    public class CreateCustomerDto
+    public class UpdateCustomerDto
     {
         [Required]
         [MaxLength(100)]
