@@ -1,7 +1,7 @@
-﻿using Floristeria.API.Entities;
+﻿using Floristeria.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Floristeria.API.Context
+namespace Floristeria.Infrastructure.Context
 {
     public class ApplicationDbContext : DbContext
     {
@@ -20,16 +20,19 @@ namespace Floristeria.API.Context
 
         public DbSet<Delivery> Deliveries { get; set; }
 
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasPrecision(18, 2);
+
+            // Relación uno a uno entre pedidos y entregas.
             modelBuilder.Entity<Delivery>()
                 .HasOne(d => d.Order)
                 .WithOne(o => o.Delivery)
                 .HasForeignKey<Delivery>(d => d.OrderId);
         }
-
     }
 }

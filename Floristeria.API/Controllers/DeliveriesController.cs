@@ -1,8 +1,7 @@
-﻿using Floristeria.API.Context;
-using Floristeria.API.DTOs;
-using Floristeria.API.Entities;
+﻿using Floristeria.API.DTOs;
+using Floristeria.Domain.Entities;
+using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Floristeria.API.Controllers
 {
@@ -10,21 +9,18 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class DeliveriesController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDeliveryRepository _deliveryRepository;
 
-        public DeliveriesController(ApplicationDbContext context)
+        public DeliveriesController(IDeliveryRepository deliveryRepository)
         {
-            _context = context;
+            _deliveryRepository = deliveryRepository;
         }
 
         // GET: api/deliveries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Delivery>>> GetDeliveries()
         {
-            var deliveries = await _context.Deliveries
-                .Include(d => d.Order)
-                .AsNoTracking()
-                .ToListAsync();
+            var deliveries = await _deliveryRepository.GetAllAsync();
 
             return Ok(deliveries);
         }
@@ -33,10 +29,7 @@ namespace Floristeria.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Delivery>> GetDelivery(int id)
         {
-            var delivery = await _context.Deliveries
-                .Include(d => d.Order)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Id == id);
+            var delivery = await _deliveryRepository.GetByIdAsync(id);
 
             if (delivery == null)
                 return NotFound();
@@ -49,14 +42,15 @@ namespace Floristeria.API.Controllers
         public async Task<ActionResult<Delivery>> CreateDelivery(
             CreateDeliveryDto dto)
         {
-            var orderExists = await _context.Orders
-                .AnyAsync(o => o.Id == dto.OrderId);
+            var orderExists =
+                await _deliveryRepository.OrderExistsAsync(dto.OrderId);
 
             if (!orderExists)
                 return BadRequest("El pedido no existe.");
 
-            var deliveryExists = await _context.Deliveries
-                .AnyAsync(d => d.OrderId == dto.OrderId);
+            var deliveryExists =
+                await _deliveryRepository.DeliveryExistsForOrderAsync(
+                    dto.OrderId);
 
             if (deliveryExists)
                 return BadRequest(
@@ -79,20 +73,20 @@ namespace Floristeria.API.Controllers
                 DeliveredDate = null
             };
 
-            _context.Deliveries.Add(delivery);
-            await _context.SaveChangesAsync();
+            var createdDelivery =
+                await _deliveryRepository.AddAsync(delivery);
 
             return CreatedAtAction(
                 nameof(GetDelivery),
-                new { id = delivery.Id },
+                new { id = createdDelivery.Id },
                 new
                 {
-                    delivery.Id,
-                    delivery.OrderId,
-                    delivery.Address,
-                    delivery.ScheduledDate,
-                    delivery.Status,
-                    delivery.DeliveredDate
+                    createdDelivery.Id,
+                    createdDelivery.OrderId,
+                    createdDelivery.Address,
+                    createdDelivery.ScheduledDate,
+                    createdDelivery.Status,
+                    createdDelivery.DeliveredDate
                 });
         }
 
@@ -101,7 +95,7 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateDelivery(
             int id, UpdateDeliveryDto dto)
         {
-            var delivery = await _context.Deliveries.FindAsync(id);
+            var delivery = await _deliveryRepository.GetByIdAsync(id);
 
             if (delivery == null)
                 return NotFound();
@@ -118,7 +112,11 @@ namespace Floristeria.API.Controllers
                 delivery.DeliveredDate = null;
             }
 
-            await _context.SaveChangesAsync();
+            var updated =
+                await _deliveryRepository.UpdateAsync(delivery);
+
+            if (!updated)
+                return NotFound();
 
             return NoContent();
         }
@@ -127,13 +125,10 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDelivery(int id)
         {
-            var delivery = await _context.Deliveries.FindAsync(id);
+            var deleted = await _deliveryRepository.DeleteAsync(id);
 
-            if (delivery == null)
+            if (!deleted)
                 return NotFound();
-
-            _context.Deliveries.Remove(delivery);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

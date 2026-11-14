@@ -1,8 +1,9 @@
-﻿using Floristeria.API.Context;
-using Floristeria.API.DTOs;
-using Floristeria.API.Entities;
+﻿using Floristeria.API.DTOs;
+using Floristeria.Domain.Entities;
+using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Floristeria.Infrastructure.Interfaces;
+using Floristeria.Infrastructure.Models;
 
 namespace Floristeria.API.Controllers
 {
@@ -10,35 +11,41 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class OrdersController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IOrderRepository _orderRepository;
+        private readonly IOrderSummaryRepository _orderSummaryRepository;
 
-        public OrdersController(ApplicationDbContext context)
+        public OrdersController(
+            IOrderRepository orderRepository,
+            IOrderSummaryRepository orderSummaryRepository)
         {
-            _context = context;
+            _orderRepository = orderRepository;
+            _orderSummaryRepository = orderSummaryRepository;
         }
+
 
         // GET: api/orders
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
         {
-            return Ok(await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                    .ThenInclude(d => d.Product)
-                .AsNoTracking()
-                .ToListAsync());
+            var orders = await _orderRepository.GetAllAsync();
+
+            return Ok(orders);
+        }
+
+        // GET: api/orders/summaries
+        [HttpGet("summaries")]
+        public async Task<ActionResult<IEnumerable<OrderSummaryModel>>> GetOrderSummaries()
+        {
+            var summaries = await _orderSummaryRepository.GetSummariesAsync();
+
+            return Ok(summaries);
         }
 
         // GET: api/orders/1
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                    .ThenInclude(d => d.Product)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id);
+            var order = await _orderRepository.GetByIdAsync(id);
 
             if (order == null)
                 return NotFound();
@@ -51,8 +58,8 @@ namespace Floristeria.API.Controllers
         public async Task<ActionResult<Order>> CreateOrder(
             CreateOrderDto dto)
         {
-            var customerExists = await _context.Customers
-                .AnyAsync(c => c.Id == dto.CustomerId);
+            var customerExists =
+                await _orderRepository.CustomerExistsAsync(dto.CustomerId);
 
             if (!customerExists)
                 return BadRequest("El cliente no existe.");
@@ -70,9 +77,8 @@ namespace Floristeria.API.Controllers
                 .Select(d => d.ProductId)
                 .ToList();
 
-            var products = await _context.Products
-                .Where(p => productIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id);
+            var products =
+                await _orderRepository.GetProductsByIdsAsync(productIds);
 
             var order = new Order
             {
@@ -109,19 +115,18 @@ namespace Floristeria.API.Controllers
                 order.Total += subtotal;
             }
 
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            var createdOrder = await _orderRepository.AddAsync(order);
 
             return CreatedAtAction(
                 nameof(GetOrder),
-                new { id = order.Id },
+                new { id = createdOrder.Id },
                 new
                 {
-                    order.Id,
-                    order.CustomerId,
-                    order.OrderDate,
-                    order.Status,
-                    order.Total
+                    createdOrder.Id,
+                    createdOrder.CustomerId,
+                    createdOrder.OrderDate,
+                    createdOrder.Status,
+                    createdOrder.Total
                 });
         }
 
@@ -130,14 +135,17 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateOrder(
             int id, UpdateOrderDto dto)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _orderRepository.GetByIdAsync(id);
 
             if (order == null)
                 return NotFound();
 
             order.Status = dto.Status;
 
-            await _context.SaveChangesAsync();
+            var updated = await _orderRepository.UpdateAsync(order);
+
+            if (!updated)
+                return NotFound();
 
             return NoContent();
         }
@@ -146,17 +154,10 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.OrderDetails)
-                .FirstOrDefaultAsync(o => o.Id == id);
+            var deleted = await _orderRepository.DeleteAsync(id);
 
-            if (order == null)
+            if (!deleted)
                 return NotFound();
-
-            _context.OrderDetails.RemoveRange(order.OrderDetails);
-            _context.Orders.Remove(order);
-
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }
