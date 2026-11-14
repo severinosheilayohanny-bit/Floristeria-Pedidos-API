@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Floristeria.API.DTOs
+namespace Floristeria.Application.Dtos.Order
 {
     public class CreateOrderDto
     {

@@ -3,6 +3,9 @@ using Floristeria.Infrastructure.Repositories;
 using Floristeria.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Floristeria.Infrastructure.Interfaces;
+using Floristeria.Application.Contract;
+using Floristeria.Application.Service;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,9 +26,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         sqlOptions => sqlOptions.MigrationsAssembly("Floristeria.API")
     ));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
 builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+
 builder.Services.AddScoped<IOrderSummaryRepository, OrderRepository>();
 
 var app = builder.Build();

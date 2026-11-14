@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Floristeria.Application\Floristeria.Application.csproj" />
     <ProjectReference Include="..\Floristeria.Domain\Floristeria.Domain.csproj" />
     <ProjectReference Include="..\Floristeria.Infrastructure\Floristeria.Infrastructure.csproj" />
   </ItemGroup>

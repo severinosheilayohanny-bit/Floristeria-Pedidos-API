@@ -1,6 +1,6 @@
-﻿using Floristeria.API.DTOs;
+﻿using Floristeria.Application.Contract;
+using Floristeria.Application.Dtos.Delivery;
 using Floristeria.Domain.Entities;
-using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Floristeria.API.Controllers
@@ -9,18 +9,18 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class DeliveriesController : ControllerBase
     {
-        private readonly IDeliveryRepository _deliveryRepository;
+        private readonly IDeliveryService _deliveryService;
 
-        public DeliveriesController(IDeliveryRepository deliveryRepository)
+        public DeliveriesController(IDeliveryService deliveryService)
         {
-            _deliveryRepository = deliveryRepository;
+            _deliveryService = deliveryService;
         }
 
         // GET: api/deliveries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Delivery>>> GetDeliveries()
         {
-            var deliveries = await _deliveryRepository.GetAllAsync();
+            var deliveries = await _deliveryService.GetAllAsync();
 
             return Ok(deliveries);
         }
@@ -29,10 +29,12 @@ namespace Floristeria.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Delivery>> GetDelivery(int id)
         {
-            var delivery = await _deliveryRepository.GetByIdAsync(id);
+            var delivery = await _deliveryService.GetByIdAsync(id);
 
             if (delivery == null)
+            {
                 return NotFound();
+            }
 
             return Ok(delivery);
         }
@@ -42,39 +44,19 @@ namespace Floristeria.API.Controllers
         public async Task<ActionResult<Delivery>> CreateDelivery(
             CreateDeliveryDto dto)
         {
-            var orderExists =
-                await _deliveryRepository.OrderExistsAsync(dto.OrderId);
+            var result = await _deliveryService.CreateAsync(dto);
 
-            if (!orderExists)
-                return BadRequest("El pedido no existe.");
-
-            var deliveryExists =
-                await _deliveryRepository.DeliveryExistsForOrderAsync(
-                    dto.OrderId);
-
-            if (deliveryExists)
-                return BadRequest(
-                    "Este pedido ya tiene una entrega registrada.");
-
-            if (string.IsNullOrWhiteSpace(dto.Address))
-                return BadRequest(
-                    "La dirección de entrega es obligatoria.");
-
-            if (dto.ScheduledDate <= DateTime.UtcNow)
-                return BadRequest(
-                    "La fecha programada debe ser futura.");
-
-            var delivery = new Delivery
+            if (!result.Success)
             {
-                OrderId = dto.OrderId,
-                Address = dto.Address.Trim(),
-                ScheduledDate = dto.ScheduledDate,
-                Status = "Pending",
-                DeliveredDate = null
-            };
+                return BadRequest(result.Message);
+            }
 
-            var createdDelivery =
-                await _deliveryRepository.AddAsync(delivery);
+            if (result.Data is not Delivery createdDelivery)
+            {
+                return StatusCode(
+                    500,
+                    "No se pudo recuperar la entrega creada.");
+            }
 
             return CreatedAtAction(
                 nameof(GetDelivery),
@@ -95,28 +77,12 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateDelivery(
             int id, UpdateDeliveryDto dto)
         {
-            var delivery = await _deliveryRepository.GetByIdAsync(id);
-
-            if (delivery == null)
-                return NotFound();
-
-            delivery.Status = dto.Status;
-
-            if (dto.Status == "Delivered")
-            {
-                delivery.DeliveredDate =
-                    delivery.DeliveredDate ?? DateTime.UtcNow;
-            }
-            else
-            {
-                delivery.DeliveredDate = null;
-            }
-
-            var updated =
-                await _deliveryRepository.UpdateAsync(delivery);
+            var updated = await _deliveryService.UpdateAsync(id, dto);
 
             if (!updated)
+            {
                 return NotFound();
+            }
 
             return NoContent();
         }
@@ -125,10 +91,12 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDelivery(int id)
         {
-            var deleted = await _deliveryRepository.DeleteAsync(id);
+            var deleted = await _deliveryService.DeleteAsync(id);
 
             if (!deleted)
+            {
                 return NotFound();
+            }
 
             return NoContent();
         }

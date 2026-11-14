@@ -1,6 +1,6 @@
-﻿using Floristeria.API.DTOs;
+﻿using Floristeria.Application.Contract;
+using Floristeria.Application.Dtos.Product;
 using Floristeria.Domain.Entities;
-using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Floristeria.API.Controllers
@@ -9,17 +9,17 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductRepository _productRepository;
+        private readonly IProductService _productService;
 
-        public ProductsController(IProductRepository productRepository)
+        public ProductsController(IProductService productService)
         {
-            _productRepository = productRepository;
+            _productService = productService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            var products = await _productRepository.GetAllAsync();
+            var products = await _productService.GetAllAsync();
 
             return Ok(products);
         }
@@ -27,7 +27,7 @@ namespace Floristeria.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _productRepository.GetByIdAsync(id);
+            var product = await _productService.GetByIdAsync(id);
 
             if (product == null)
             {
@@ -41,16 +41,7 @@ namespace Floristeria.API.Controllers
         public async Task<ActionResult<Product>> CreateProduct(
             CreateProductDto dto)
         {
-            var product = new Product
-            {
-                Name = dto.Name,
-                Description = dto.Description,
-                Price = dto.Price,
-                Stock = dto.Stock,
-                IsAvailable = dto.IsAvailable
-            };
-
-            var createdProduct = await _productRepository.AddAsync(product);
+            var createdProduct = await _productService.CreateAsync(dto);
 
             return CreatedAtAction(
                 nameof(GetProduct),
@@ -62,20 +53,7 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateProduct(
             int id, UpdateProductDto dto)
         {
-            var product = await _productRepository.GetByIdAsync(id);
-
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            product.Name = dto.Name;
-            product.Description = dto.Description;
-            product.Price = dto.Price;
-            product.Stock = dto.Stock;
-            product.IsAvailable = dto.IsAvailable;
-
-            var updated = await _productRepository.UpdateAsync(product);
+            var updated = await _productService.UpdateAsync(id, dto);
 
             if (!updated)
             {
@@ -88,7 +66,7 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var deleted = await _productRepository.DeleteAsync(id);
+            var deleted = await _productService.DeleteAsync(id);
 
             if (!deleted)
             {

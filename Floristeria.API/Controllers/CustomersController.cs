@@ -1,6 +1,6 @@
-﻿using Floristeria.API.DTOs;
+﻿using Floristeria.Application.Contract;
+using Floristeria.Application.Dtos.Customer;
 using Floristeria.Domain.Entities;
-using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Floristeria.API.Controllers
@@ -9,18 +9,18 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class CustomersController : ControllerBase
     {
-        private readonly ICustomerRepository _customerRepository;
+        private readonly ICustomerService _customerService;
 
-        public CustomersController(ICustomerRepository customerRepository)
+        public CustomersController(ICustomerService customerService)
         {
-            _customerRepository = customerRepository;
+            _customerService = customerService;
         }
 
         // GET: api/customers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
-            var customers = await _customerRepository.GetAllAsync();
+            var customers = await _customerService.GetAllAsync();
 
             return Ok(customers);
         }
@@ -29,7 +29,7 @@ namespace Floristeria.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Customer>> GetCustomer(int id)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
+            var customer = await _customerService.GetByIdAsync(id);
 
             if (customer == null)
             {
@@ -44,16 +44,7 @@ namespace Floristeria.API.Controllers
         public async Task<ActionResult<Customer>> CreateCustomer(
             CreateCustomerDto dto)
         {
-            var customer = new Customer
-            {
-                Name = dto.Name,
-                Email = dto.Email,
-                Phone = dto.Phone,
-                Address = dto.Address
-            };
-
-            var createdCustomer =
-                await _customerRepository.AddAsync(customer);
+            var createdCustomer = await _customerService.CreateAsync(dto);
 
             return CreatedAtAction(
                 nameof(GetCustomer),
@@ -66,20 +57,7 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateCustomer(
             int id, UpdateCustomerDto dto)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
-
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            customer.Name = dto.Name;
-            customer.Email = dto.Email;
-            customer.Phone = dto.Phone;
-            customer.Address = dto.Address;
-
-            var updated =
-                await _customerRepository.UpdateAsync(customer);
+            var updated = await _customerService.UpdateAsync(id, dto);
 
             if (!updated)
             {
@@ -93,7 +71,7 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
-            var deleted = await _customerRepository.DeleteAsync(id);
+            var deleted = await _customerService.DeleteAsync(id);
 
             if (!deleted)
             {
