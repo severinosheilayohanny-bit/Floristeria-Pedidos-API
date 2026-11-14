@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace Floristeria.API.Entities
+﻿namespace Floristeria.Domain.Entities
 {
     public class Product
     {
@@ -10,7 +8,6 @@ namespace Floristeria.API.Entities
 
         public string Description { get; set; } = string.Empty;
 
-        [Precision(18, 2)]
         public decimal Price { get; set; }
 
         public int Stock { get; set; }

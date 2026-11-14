@@ -1,8 +1,7 @@
-﻿using Floristeria.API.Context;
-using Floristeria.API.DTOs;
-using Floristeria.API.Entities;
+﻿using Floristeria.API.DTOs;
+using Floristeria.Domain.Entities;
+using Floristeria.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Floristeria.API.Controllers
 {
@@ -10,25 +9,27 @@ namespace Floristeria.API.Controllers
     [ApiController]
     public class CustomersController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICustomerRepository _customerRepository;
 
-        public CustomersController(ApplicationDbContext context)
+        public CustomersController(ICustomerRepository customerRepository)
         {
-            _context = context;
+            _customerRepository = customerRepository;
         }
 
         // GET: api/customers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
-            return await _context.Customers.ToListAsync();
+            var customers = await _customerRepository.GetAllAsync();
+
+            return Ok(customers);
         }
 
         // GET: api/customers/1
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Customer>> GetCustomer(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _customerRepository.GetByIdAsync(id);
 
             if (customer == null)
             {
@@ -51,13 +52,13 @@ namespace Floristeria.API.Controllers
                 Address = dto.Address
             };
 
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
+            var createdCustomer =
+                await _customerRepository.AddAsync(customer);
 
             return CreatedAtAction(
                 nameof(GetCustomer),
-                new { id = customer.Id },
-                customer);
+                new { id = createdCustomer.Id },
+                createdCustomer);
         }
 
         // PUT: api/customers/1
@@ -65,7 +66,7 @@ namespace Floristeria.API.Controllers
         public async Task<IActionResult> UpdateCustomer(
             int id, UpdateCustomerDto dto)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _customerRepository.GetByIdAsync(id);
 
             if (customer == null)
             {
@@ -77,7 +78,13 @@ namespace Floristeria.API.Controllers
             customer.Phone = dto.Phone;
             customer.Address = dto.Address;
 
-            await _context.SaveChangesAsync();
+            var updated =
+                await _customerRepository.UpdateAsync(customer);
+
+            if (!updated)
+            {
+                return NotFound();
+            }
 
             return NoContent();
         }
@@ -86,15 +93,12 @@ namespace Floristeria.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var deleted = await _customerRepository.DeleteAsync(id);
 
-            if (customer == null)
+            if (!deleted)
             {
                 return NotFound();
             }
-
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

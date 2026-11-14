@@ -1,7 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Floristeria.API.Entities
+namespace Floristeria.Domain.Entities
 {
     public class Customer
     {
