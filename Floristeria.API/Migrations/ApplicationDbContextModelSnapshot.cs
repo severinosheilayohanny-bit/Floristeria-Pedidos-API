@@ -54,6 +54,41 @@ namespace Floristeria.API.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("Floristeria.API.Entities.Delivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("DeliveredDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.ToTable("Deliveries");
+                });
+
             modelBuilder.Entity("Floristeria.API.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -146,6 +181,17 @@ namespace Floristeria.API.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("Floristeria.API.Entities.Delivery", b =>
+                {
+                    b.HasOne("Floristeria.API.Entities.Order", "Order")
+                        .WithOne("Delivery")
+                        .HasForeignKey("Floristeria.API.Entities.Delivery", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Floristeria.API.Entities.Order", b =>
                 {
                     b.HasOne("Floristeria.API.Entities.Customer", "Customer")
@@ -178,6 +224,8 @@ namespace Floristeria.API.Migrations
 
             modelBuilder.Entity("Floristeria.API.Entities.Order", b =>
                 {
+                    b.Navigation("Delivery");
+
                     b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618

@@ -26,5 +26,8 @@ namespace Floristeria.API.Entities
         // Un pedido puede contener varios productos
         public ICollection<OrderDetail> OrderDetails { get; set; }
             = new List<OrderDetail>();
+
+        public Delivery? Delivery { get; set; }
+
     }
 }
